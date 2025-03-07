@@ -12,3 +12,4 @@ Usage:
 - Implement error handling to manage any issues that arise during communication.
 - Ensure security by utilizing the built-in encryption and authentication features.
 """
+
