@@ -1,72 +1,83 @@
-"""
-This module implements a peer-to-peer (P2P) communication system.
-
-Classes:
-    Peer: Represents a single peer in the P2P network.
-    Message: Represents a message to be sent between peers.
-    Network: Manages the connections and message passing between peers.
-
-Functions:
-    connect_peers(peer1, peer2): Establishes a connection between two peers.
-    send_message(sender, receiver, message): Sends a message from one peer to another.
-    broadcast_message(sender, message): Sends a message from one peer to all connected peers.
-
-Usage:
-    - Create instances of the Peer class to represent nodes in the network.
-    - Use the connect_peers function to establish connections between peers.
-    - Use the send_message and broadcast_message functions to facilitate communication between peers.
-"""
-
 import os
 
 class FileManager:
-    def __init__(self , file_name , file_size , piece_size , peer_id):
+    def __init__(self, file_name, file_size, piece_size, peer_id):
         self.file_name = file_name
         self.file_size = file_size
         self.piece_size = piece_size
         self.peer_id = peer_id
-        self.num_pieces = (file_size+piece_size-1) // piece_size
-        self.storage_dir = f'peer_{peer_id}'
+        self.source_dir = str(peer_id)  # directory where the full file initially resides
+        self.storage_dir = f"peer_{peer_id}"  # where the pieces and final output go
+        os.makedirs(self.storage_dir, exist_ok=True)
 
-        if not os.path.exists(self.storage_dir):
-            os.makedirs(self.storage_dir)
-        
-        print(f"Attempting to open file: {os.path.abspath(self.file_name)}")
+    def calculate_piece_offset(self, piece_index):
+        return piece_index * self.piece_size
 
-    def split_file_into_pieces(self):
-
-        try:
-            with open(self.file_name, 'rb') as file:
-                for i in range(self.num_pieces):
-                    start_byte = i * self.piece_size
-                    piece_data = file.read(self.piece_size)
-                    self.save_piece(i, piece_data)
-        except FileNotFoundError:
-            print(f"File not found: {self.file_name}")
-            raise
-
-    def save_piece(self, piece_index, piece_data):
-        piece_filename = os.path.join(self.storage_dir, f'piece_{piece_index}')
-        with open(piece_filename, 'wb') as piece_file:
-            piece_file.write(piece_data)
+    def calculate_piece_length(self, piece_index):
+        offset = self.calculate_piece_offset(piece_index)
+        remaining_bytes = self.file_size - offset
+        return min(self.piece_size, remaining_bytes)
 
     def retrieve_piece(self, piece_index):
-        piece_filename = os.path.join(self.storage_dir, f'piece_{piece_index}')
-        with open(piece_filename, 'rb') as piece_file:
-            return piece_file.read()
-        return None
-    
-    def reassemble_file(self, output_file_name):
-        with open(output_file_name, 'wb') as output_file:
-            for i in range(self.num_pieces):
-                piece_data = self.retrieve_piece(i)
-                if piece_data:
-                    output_file.write(piece_data)
-                else:
-                    print(f"Piece {i} is missing, can't reassemble file")
-                    return False
-        print(f"File reassembled successfully and saved as {output_file_name}")
-        return True
+        file_path = os.path.join(self.storage_dir, f"piece_{piece_index}")
+        try:
+            with open(file_path, 'rb') as f:
+                return f.read()
+        except FileNotFoundError:
+            return None
+        except IOError as e:
+            print(f"Error reading piece {piece_index}: {e}")
+            return None
+
+    def save_piece(self, piece_index, data):
+        file_path = os.path.join(self.storage_dir, f"piece_{piece_index}")
+        try:
+            with open(file_path, 'wb') as f:
+                f.write(data)
+            return True
+        except IOError as e:
+            print(f"Error saving piece {piece_index}: {e}")
+            return False
+
     def is_piece_avalible(self, piece_index):
-        piece_filename = os.path.join(self.storage_dir, f'piece_{piece_index}')
-        return os.path.exists(piece_filename)
+        file_path = os.path.join(self.storage_dir, f"piece_{piece_index}")
+        return os.path.exists(file_path)
+
+    def has_complete_file(self):
+        file_path = os.path.join(self.storage_dir, self.file_name)
+        return os.path.exists(file_path) and os.path.getsize(file_path) == self.file_size
+
+    def assemble_file(self, total_pieces):
+        final_file_path = os.path.join(self.storage_dir, self.file_name)
+        try:
+            with open(final_file_path, 'wb') as outfile:
+                for i in range(total_pieces):
+                    piece_path = os.path.join(self.storage_dir, f"piece_{i}")
+                    try:
+                        with open(piece_path, 'rb') as infile:
+                            outfile.write(infile.read())
+                    except FileNotFoundError:
+                        print(f"Missing piece {i}, cannot assemble complete file.")
+                        return False
+            return True
+        except IOError as e:
+            print(f"Error assembling file: {e}")
+            return False
+
+    def split_file_into_pieces(self):
+        source_file_path = os.path.join(self.source_dir, self.file_name)
+        try:
+            with open(source_file_path, 'rb') as infile:
+                for i in range((self.file_size + self.piece_size - 1) // self.piece_size):
+                    offset = i * self.piece_size
+                    bytes_to_read = self.calculate_piece_length(i)
+                    infile.seek(offset)
+                    data = infile.read(bytes_to_read)
+                    self.save_piece(i, data)
+            return True
+        except FileNotFoundError:
+            print(f"File not found: {source_file_path}")
+            return False
+        except IOError as e:
+            print(f"Error reading source file: {e}")
+            return False
