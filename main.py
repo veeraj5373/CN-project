@@ -1,20 +1,25 @@
-"""
-This function performs a specific task based on the given input parameters.
+import sys
+from peer import Peer
 
-Parameters:
-    param1 (type): Description of the first parameter.
-    param2 (type): Description of the second parameter.
-    param3 (type): Description of the third parameter.
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python main.py <peer_id>")
+        sys.exit(1)
 
-Returns:
-    type: Description of the return value.
+    try:
+        peer_id = int(sys.argv[1])
+        peer = Peer(peer_id)
 
-Raises:
-    ExceptionName: Description of the exception that might be raised.
+        # Keep the main thread alive so other threads continue running
+        while True:
+            pass
 
-Example:
-    Example of how to use this function.
-
-Notes:
-    Additional notes or information about the function.
-"""
+    except ValueError:
+        print("Error: Peer ID must be an integer.")
+        sys.exit(1)
+    except KeyboardInterrupt:
+        print(f"Peer {peer_id} shutting down...")
+        sys.exit(0)
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        sys.exit(1)
