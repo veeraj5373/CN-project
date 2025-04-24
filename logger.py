@@ -7,7 +7,7 @@ class Logger:
         self.peer_id = peer_id
         self.log_dir = str(peer_id)  # Store logs inside the same peer folder like '1001'
         os.makedirs(self.log_dir, exist_ok=True)
-        log_file_path = os.path.join(self.log_dir, f"log_peer_{peer_id}.log")
+        log_file_path = f"log_peer_{self.peer_id}.log"
 
         logging.basicConfig(
             level=logging.INFO,
