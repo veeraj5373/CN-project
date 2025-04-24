@@ -4,24 +4,24 @@ A fully functional Peer-to-Peer (P2P) file sharing network built using Python so
 
 ---
 
-## 📌 Overview
+## Overview
 
 This project simulates a P2P network where each node (peer) can upload and download files without needing a centralized server. It models real-world P2P applications like BitTorrent in a simplified academic format.
 
 ---
 
-## 🚀 Features
+## Features
 
-- ✅ Peer discovery and communication  
-- ✅ File segmentation and transfer  
-- ✅ Custom protocol for message exchange  
-- ✅ Logging and error handling  
-- ✅ TCP-based reliable data transfer  
-- ✅ UDP-based messaging (for control/signaling)  
+- Peer discovery and communication  
+- File segmentation and transfer  
+- Custom protocol for message exchange  
+- Logging and error handling  
+- TCP-based reliable data transfer  
+- UDP-based messaging (for control/signaling)  
 
 ---
 
-## 🗂 Project Structure
+## Project Structure
 
 ```
 CN-project/
@@ -41,7 +41,7 @@ CN-project/
 
 ---
 
-## 🛠️ Installation & Setup
+## Installation & Setup
 
 ### Prerequisites
 
@@ -64,18 +64,18 @@ bash requirements.sh
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
 ### `Common.cfg`
 
 Defines global constants used across all peers:
 
-- `NumberOfPreferredNeighbors`
-- `UnchokingInterval`
-- `OptimisticUnchokingInterval`
-- `FileName`
-- `FileSize`
-- `PieceSize`
+- NumberOfPreferredNeighbors
+- UnchokingInterval
+- OptimisticUnchokingInterval
+- FileName
+- FileSize
+- PieceSize
 
 ### `PeerInfo.cfg`
 
@@ -93,7 +93,7 @@ Example:
 
 ---
 
-## ▶️ Running the Application
+## Running the Application
 
 Open a separate terminal for each peer listed in `PeerInfo.cfg` and run:
 
@@ -105,7 +105,7 @@ Where `<PeerID>` matches the one in your config file.
 
 ---
 
-## 📄 Logging
+## Logging
 
 Each peer creates its own log file:
 
@@ -121,7 +121,7 @@ This records:
 
 ---
 
-## 📚 Project Goals
+## Project Goals
 
 - Understand the mechanics of peer-to-peer networks  
 - Practice socket programming using TCP/UDP  
@@ -130,12 +130,12 @@ This records:
 
 ---
 
-## 📘 License
+## License
 
 This project is licensed under the [MIT License](LICENSE).
 
 ---
 
-## 🙌 Acknowledgments
+## Acknowledgments
 
 This project was developed as a university Computer Networks assignment. The architecture and logic closely follow academic P2P specifications with custom implementations.
