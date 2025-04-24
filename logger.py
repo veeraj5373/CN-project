@@ -1,85 +1,61 @@
-"""
-This Python file is designed to perform the following tasks:
-
-1. Import necessary libraries and modules.
-2. Define functions and classes required for the main functionality.
-3. Implement the main logic of the program, including data processing and manipulation.
-4. Handle user inputs and outputs, if applicable.
-5. Include error handling and logging mechanisms to ensure robustness.
-6. Provide unit tests or examples to demonstrate the usage of the implemented functions and classes.
-"""
-
 import logging
+import time
 import os
-from datetime import datetime
 
-class PeerLogger:
-    def __init__(self, peer_id):
-        """
-        Initialize the logger for a specific peer.
-        Creates a log file with the name 'log_peer_[peerID].log'.
-        """
+class Logger:
+    def _init_(self, peer_id):
         self.peer_id = peer_id
-        log_filename = f'log_peer_{peer_id}.log'
+        self.log_dir = "log_files"
+        os.makedirs(self.log_dir, exist_ok=True)
+        log_file_path = os.path.join(self.log_dir, f"log_peer_{peer_id}.log")
 
-        # Create a logs directory if it doesn't exist
-        if not os.path.exists('logs'):
-            os.makedirs('logs')
-
-        # Set up the logging configuration
         logging.basicConfig(
-            filename=os.path.join('logs', log_filename),
-            filemode='a',
-            format='%(message)s',
-            level=logging.INFO
+            level=logging.INFO,
+            format='%(asctime)s - Peer %(levelname)s - %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S',
+            filename=log_file_path,
+            filemode='w'
         )
 
-    def _log(self, message):
-        
-        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        logging.info(f"[{current_time}] {message}")
+        self.logger = logging.getLogger(f"Peer_{peer_id}_Logger")
+        self.start_time = time.time()
 
-    def log_tcp_connection(self, peer_id_2):
-        
-        self._log(f"Peer {self.peer_id} makes a connection to Peer {peer_id_2}.")
+    def log(self, message):
+        self.logger.info(f"[{self.get_elapsed_time()}] {message}")
 
-    def log_tcp_connected(self, peer_id_2):
-        
-        self._log(f"Peer {self.peer_id} is connected from Peer {peer_id_2}.")
+    def log_connection(self, peer_id_connected_to):
+        self.log(f"Peer {self.peer_id} makes a connection to Peer {peer_id_connected_to}.")
 
-    def log_preferred_neighbors(self, preferred_neighbors):
-        
-        preferred_neighbors_str = ", ".join(map(str, preferred_neighbors))
-        self._log(f"Peer {self.peer_id} has the preferred neighbors [{preferred_neighbors_str}].")
+    def log_disconnect(self, peer_id_disconnected_from):
+        self.log(f"Peer {self.peer_id} terminates the connection with Peer {peer_id_disconnected_from}.")
 
-    def log_optimistically_unchoked(self, peer_id_2):
-        
-        self._log(f"Peer {self.peer_id} has the optimistically unchoked neighbor {peer_id_2}.")
+    def log_change_preferred_neighbors(self, preferred_neighbors):
+        neighbors_str = ", ".join(map(str, preferred_neighbors))
+        self.log(f"Peer {self.peer_id} has the preferred neighbors {neighbors_str}.")
 
-    def log_unchoked(self, peer_id_2):
-        
-        self._log(f"Peer {self.peer_id} is unchoked by Peer {peer_id_2}.")
+    def log_change_optimistically_unchoked_neighbor(self, optimistically_unchoked_neighbor):
+        self.log(f"Peer {self.peer_id} has the optimistically unchoked neighbor {optimistically_unchoked_neighbor}.")
 
-    def log_choked(self, peer_id_2):
-        
-        self._log(f"Peer {self.peer_id} is choked by Peer {peer_id_2}.")
+    def log_unchoking(self, peer_id_unchoked):
+        self.log(f"Peer {self.peer_id} unchokes peer {peer_id_unchoked}.")
 
-    def log_have(self, peer_id_2, piece_index):
-        
-        self._log(f"Peer {self.peer_id} received the 'have' message from Peer {peer_id_2} for the piece {piece_index}.")
+    def log_choking(self, peer_id_choked):
+        self.log(f"Peer {self.peer_id} chokes peer {peer_id_choked}.")
 
-    def log_interested(self, peer_id_2):
-        
-        self._log(f"Peer {self.peer_id} received the 'interested' message from Peer {peer_id_2}.")
+    def log_received_have(self, sender_peer_id, piece_index):
+        self.log(f"Peer {self.peer_id} received the 'have' message from Peer {sender_peer_id} for the piece {piece_index}.")
 
-    def log_not_interested(self, peer_id_2):
-      
-        self._log(f"Peer {self.peer_id} received the 'not interested' message from Peer {peer_id_2}.")
+    def log_received_piece(self, sender_peer_id, piece_index, num_pieces_received):
+        self.log(f"Peer {self.peer_id} has downloaded the piece {piece_index} from Peer {sender_peer_id}. Now the number of pieces it has is {num_pieces_received}.")
 
-    def log_piece_downloaded(self, peer_id_2, piece_index, num_pieces):
-       
-        self._log(f"Peer {self.peer_id} has downloaded the piece {piece_index} from Peer {peer_id_2}. Now the number of pieces it has is {num_pieces}.")
+    def log_requested_piece(self, receiver_peer_id, piece_index):
+        self.log(f"Peer {self.peer_id} sent a 'request' message to Peer {receiver_peer_id} for the piece {piece_index}.")
 
-    def log_complete_file_downloaded(self):
-    
-        self._log(f"Peer {self.peer_id} has downloaded the complete file.")
+    def log_sent_piece(self, receiver_peer_id, piece_index):
+        self.log(f"Peer {self.peer_id} sent the piece {piece_index} to Peer {receiver_peer_id}.")
+
+    def log_download_complete(self):
+        self.log(f"Peer {self.peer_id} has downloaded the complete file.")
+
+    def get_elapsed_time(self):
+        return f"{int(time.time() - self.start_time):02d}s"
