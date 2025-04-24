@@ -44,6 +44,14 @@ class Message:
     def piece(piece_index, data):
         payload = struct.pack(">I", piece_index) + data
         return struct.pack(">IB", 1 + len(payload), Message.PIECE) + payload
+    
+    @staticmethod
+    def interested():
+        return struct.pack('>IB', 1, 2)  # Length = 1, ID = 2
+
+    @staticmethod
+    def not_interested():
+        return struct.pack('>IB', 1, 3)  # Length = 1, ID = 3
 
     @staticmethod
     def parse_message(data):

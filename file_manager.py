@@ -6,8 +6,8 @@ class FileManager:
         self.file_size = file_size
         self.piece_size = piece_size
         self.peer_id = peer_id
-        self.source_dir = str(peer_id)  # directory where the full file initially resides
-        self.storage_dir = f"peer_{peer_id}"  # where the pieces and final output go
+        self.source_dir = str(peer_id)  # Where the full file resides initially
+        self.storage_dir = str(peer_id)  # Also use the same for saving pieces and final output
         os.makedirs(self.storage_dir, exist_ok=True)
 
     def calculate_piece_offset(self, piece_index):

@@ -3,9 +3,9 @@ import time
 import os
 
 class Logger:
-    def _init_(self, peer_id):
+    def __init__(self, peer_id):
         self.peer_id = peer_id
-        self.log_dir = "log_files"
+        self.log_dir = str(peer_id)  # Store logs inside the same peer folder like '1001'
         os.makedirs(self.log_dir, exist_ok=True)
         log_file_path = os.path.join(self.log_dir, f"log_peer_{peer_id}.log")
 
@@ -59,3 +59,4 @@ class Logger:
 
     def get_elapsed_time(self):
         return f"{int(time.time() - self.start_time):02d}s"
+

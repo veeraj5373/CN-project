@@ -232,12 +232,16 @@ class Peer:
                         bit_index = 7 - (i % 8)
                         if byte_index < len(payload) and (payload[byte_index] & (1 << bit_index)):
                             self.piece_owners.setdefault(i, set()).add(peer_id)
-                    self._send_request_for_piece(peer_id)
+
+                    self._update_interest(peer_id)
+                    self.logger.log(f"[Interest] Reevaluated interest in Peer {peer_id} after BITFIELD")
 
                 elif msg_id == Message.HAVE:
                     piece_index = struct.unpack('>I', payload)[0]
                     self.piece_owners.setdefault(piece_index, set()).add(peer_id)
-                    self._send_request_for_piece(peer_id)
+
+                    self._update_interest(peer_id)
+                    self.logger.log(f"[Interest] Reevaluated interest in Peer {peer_id} after HAVE")
 
                 elif msg_id == Message.REQUEST:
                     self.last_request_time = time.time()
@@ -264,12 +268,13 @@ class Peer:
                             self._check_download_completion()
 
                             # Notify all peers we now have this piece
-                            for pid, conn in self.connections.items():
+                            for pid, conn in list(self.connections.items()):
                                 try:
                                     conn.sendall(Message.have(piece_index))
                                 except Exception:
                                     self.logger.log(f"[Notify] Failed to notify {pid} about piece {piece_index}")
                             self._send_request_for_piece(peer_id)
+
         except Exception as e:
             self.logger.log(f"[Receive] Error receiving message from {peer_id}: {e}")
         finally:
@@ -286,6 +291,7 @@ class Peer:
 
 
 
+
     def _send_request_for_piece(self, peer_id):
         """Send a request for a needed piece to the specified peer."""
         if peer_id in self.choked_peers:
@@ -298,7 +304,8 @@ class Peer:
             return
 
         available_pieces = [
-            i for i in range(self.total_pieces) if peer_id in self.piece_owners.get(i, set())]
+            i for i in range(self.total_pieces) if peer_id in self.piece_owners.get(i, set())
+        ]
 
         needed_pieces = [
             piece for piece in available_pieces 
@@ -307,6 +314,7 @@ class Peer:
 
         if not needed_pieces:
             self.logger.log(f"[Request] No needed pieces available from Peer {peer_id}")
+            self._send_not_interested(peer_id)
             return
 
         # Choose a random piece to request
@@ -315,6 +323,7 @@ class Peer:
         self.requested_pieces.add(piece_index)
 
         try:
+            self._send_interested(peer_id)
             sock.sendall(Message.request(piece_index))
             self.logger.log_requested_piece(peer_id, piece_index)
         except Exception as e:
@@ -325,9 +334,9 @@ class Peer:
 
 
 
+
     def _update_interest(self, peer_id):
         """Update whether this peer is interested in pieces from the given peer."""
-        # Check if the peer has any piece we need
         is_interesting = any(
             peer_id in self.piece_owners.get(i, set()) and i not in self.pieces
             for i in range(self.total_pieces)
@@ -336,12 +345,13 @@ class Peer:
         if is_interesting:
             if peer_id not in self.interested_peers:
                 self.logger.log(f"[Interest] Now interested in Peer {peer_id}")
+                self._send_interested(peer_id)  # NEW
             self.interested_peers.add(peer_id)
         else:
             if peer_id in self.interested_peers:
                 self.logger.log(f"[Interest] No longer interested in Peer {peer_id}")
+                self._send_not_interested(peer_id)  # NEW
             self.interested_peers.discard(peer_id)
-
 
     def _periodic_unchoke(self):
             """Periodically unchoke preferred peers based on download rates."""
@@ -437,6 +447,8 @@ class Peer:
                     with open(path, 'r') as f:
                         completed_peers.update(line.strip() for line in f if line.strip().isdigit())
 
+            self.logger.log(f"[Wait] {len(completed_peers)}/{len(self.peers) + 1} peers completed: {sorted(completed_peers)}")
+
             if len(completed_peers) >= len(self.peers) + 1:  # +1 for self
                 self.logger.log(f"[Exit] All peers have completed. Shutting down.")
                 for conn in list(self.connections.values()):
@@ -448,6 +460,7 @@ class Peer:
                 os._exit(0)
 
             time.sleep(5)
+
     
     def _check_download_completion(self):
         if len(self.pieces) == self.total_pieces:
@@ -506,6 +519,30 @@ class Peer:
         except Exception as e:
             self.logger.log(f"[Handle] Error handling connection from {addr}: {e}")
             sock.close()
+
+    def _send_interested(self, peer_id):
+        sock = self.connections.get(peer_id)
+        if not sock:
+            self.logger.log(f"[Interest] Cannot send INTERESTED to Peer {peer_id}: No connection")
+            return
+        try:
+            sock.sendall(Message.interested())
+            self.logger.log(f"[Interest] Sent INTERESTED to Peer {peer_id}")
+        except Exception as e:
+            self.logger.log(f"[Interest] Failed to send INTERESTED to Peer {peer_id}: {e}")
+
+
+    def _send_not_interested(self, peer_id):
+        sock = self.connections.get(peer_id)
+        if not sock:
+            self.logger.log(f"[Interest] Cannot send NOT_INTERESTED to Peer {peer_id}: No connection")
+            return
+        try:
+            sock.sendall(Message.not_interested())
+            self.logger.log(f"[Interest] Sent NOT_INTERESTED to Peer {peer_id}")
+        except Exception as e:
+            self.logger.log(f"[Interest] Failed to send NOT_INTERESTED to Peer {peer_id}: {e}")
+
 
 
 

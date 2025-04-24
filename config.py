@@ -54,5 +54,3 @@ class Config:
         return self.peer_info.get(peer_id, {}).get('has_file', 0) == 1
 
 
-
-    
